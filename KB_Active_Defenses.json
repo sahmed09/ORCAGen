@@ -1,0 +1,126 @@
+[
+    {
+        "Malware Family": "Information Stealer",
+        "Attack Technique": "File System Scanning",
+        "Deception Strategy": [
+            {
+                "Strategy": "Filesystem API Hooking",
+                "Description": "Intercept calls to file system scanning and access APIs such as FindFirstFile, FindNextFile, CreateFile, ReadFile, etc. Return decoy filenames instead of the actual search results to mislead malware."
+            },
+            {
+                "Strategy": "Honeyfiles",
+                "Description": "Plant decoy files with fake but plausible credentials or wallet data (e.g., wallet_backup.dat, passwords.csv).Monitor access to these honeyfiles using tools like: File access event hooks (e.g., ReadFile, CreateFile)."
+            },
+            {
+                "Strategy": "Decoy Directories with Activity Monitoring",
+                "Description": "Create folders like C:\\Users\\Public\\Documents\\CryptoWallets with fake files. Use filesystem auditing (e.g., Windows Audit Policies + Event Logs). Alert when access occurs."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Information Stealer",
+        "Attack Technique": "Registry Mining",
+        "Deception Strategy": [
+            {
+                "Strategy": "Registry API Hooking",
+                "Description": "Actively intercept and alter registry operations by hooking APIs such as RegOpenKeyEx, RegQueryValueEx, RegSetValueEx, RegCreateKeyEx. Redirect reads to decoy registry data; for example, if the malware queries Winlogon\\DefaultPassword, return decoy value instead of the real data."
+            },
+            {
+                "Strategy": "Honeyregistry Keys",
+                "Description": "Create fake registry keys that resemble sensitive locations (e.g., HKCU\\Software\\FakeWalletApp\\Settings\\Password = 'hunter2'). Use RegNotifyChangeKeyValue or ETW (Event Tracing for Windows) to monitor access. Trigger alerts or terminate the process accessing decoy keys."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Ransomware",
+        "Attack Technique": "File-Based Encryption",
+        "Deception Strategy": [
+            {
+                "Strategy": "File I/O Hooking",
+                "Description": "Intercept file operation APIs such as CreateFile, WriteFile, SetFilePointer, FlushFileBuffers to detect or modify ransomware behavior. Check for suspicious access to large numbers of documents. The goal is to implement a FakeFailure/FakeSuccess approach for specific file types where the ransomware receives error messages, indicating failed to encrypt files (FakeFailure), or the ransomware perceives the encryption as complete and receive a fake success message while no actual file is encrypted (FakeSuccess) while legitimate file operations remain functional."
+            },
+            {
+                "Strategy": "Honeyfiles and Honeypath Traps",
+                "Description": "Create fake files or directories with high-value extensions (e.g., finance_report_2024.xlsx) in monitored paths to attract ransomware and detect malicious activity. Implementation: Place honeyfiles with decoy content across user folders and network shares. Monitor access using file system filter drivers, EDR file access alerts, or tools like Canarytokens.org. Response: Trigger automatic process kill, isolation, or alerts on first write/encrypt attempt."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Ransomware",
+        "Attack Technique": "File Renaming or Extension Changes",
+        "Deception Strategy": [
+            {
+                "Strategy": "Hook File Renaming APIs",
+                "Description": "Intercept file renaming APIs such as MoveFile, MoveFileEx to monitor suspicious extension changes. Monitor renames involving suspicious extensions like .locked, .enc, .REvil, .encrypted. Block the operation, log the attempts and generate a fake rename success message for such patterns and send the message to the ransomware."
+            },
+            {
+                "Strategy": "Honeyfiles with Extension Change Detection",
+                "Description": "Place decoy documents with monitored extensions (e.g., .docx, .xlsx) in key folders and watch for unexpected renaming. Watch for unexpected renaming using file system filter drivers or Sysmon (Event ID 13: file create/rename). Trigger alert or isolate system when decoy is renamed. The goal is to early detection before broader file encryption begins."
+            },
+            {
+                "Strategy": "Extension Honeytraps",
+                "Description": "Create fake files that, when renamed, signal ransomware activity. Example: do_not_touch_invoice.docx or bait.key with a file monitor; if the extension changes, trigger alert or kill process. Goal: Set up canaries across different user profiles or file shares."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Keylogger",
+        "Attack Technique": "Screen Logging",
+        "Deception Strategy": [
+            {
+                "Strategy": "Screen Capture Prevention",
+                "Description": "The screen capture APIs (e.g., BitBlt, PrintWindow) captures screen content. Intercept screenshot capture APIs and replace captured images with decoy screenshots. For example, hook the BitBlt and PrintWindow APIs to inject decoy images. Ensure legitimate screen capture requests remain functional."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Keylogger",
+        "Attack Technique": "Mouse Tracking",
+        "Deception Strategy": [
+            {
+                "Strategy": "Mouse Tracking Mitigation",
+                "Description": "The GetCursorPos function retrieves the current position of the cursor. Malicious programs can use this API for mouse tracking. Intercept mouse movement tracking APIs and block tracking mouse movement with a block message or return fake cursor position to deceive the malicious program. Ensure legitimate mouse movement requests remain functional. For example, hook the GetCursorPos API to block tracking mouse movement with a block message or return fake cursor position."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Keylogger",
+        "Attack Technique": "Clipboard Logging",
+        "Deception Strategy": [
+            {
+                "Strategy": "Provide Decoy Content",
+                "Description": "Intercept clipboard read operations and replace actual data with decoy content. For example, hook the OpenClipboard, GetClipboardData APIs to supply false clipboard data."
+            },
+            {
+                "Strategy": "Restrict API Access",
+                "Description": "Limit GetClipboardData/SetClipboardData usage to trusted applications via endpoint security policies. Enforce browser permissions (e.g., clipboard-read, clipboard-write) to block untrusted sites from accessing clipboard content."
+            },
+            {
+                "Strategy": "Secure Clipboard Data Handling",
+                "Description": "Obfuscate sensitive clipboard data to prevent leaks. Use Android's ClipDescription.EXTRA_IS_SENSITIVE or similar flags to hide clipboard previews from unauthorized apps or processes."
+            }
+        ]
+    },
+    {
+        "Malware Family": "Keylogger",
+        "Attack Technique": "Keyboard Hooking",
+        "Deception Strategy": [
+            {
+                "Strategy": "Modify API Behavior",
+                "Description": "Alter behavior of keyboard polling APIs commonly exploited by keyloggers to return fake data instead of actual keystrokes. Hook the keypress capture APIs (e.g., GetKeyState, GetAsyncKeyState, SetWindowsHookEx with WH_KEYBOARD_LL, GetWindowText, GetWindowTextEX) to replace actual keystrokes with randomized decoy inputs. The malware checks each key in a loop and force a random decoy character to return 0x8000 (pressed) when any actual key is truly pressed. This simulates a keypress of random character exactly when real keys are pressed. The deception must occur only within the malware process, ensuring that legitimate applications continue to receive accurate key states."
+            },
+            {
+                "Strategy": "Behavioral Analysis",
+                "Description": "Flag processes that excessively poll keyboard states (e.g., rapid GetKeyState calls) and check if they match known keylogger behaviors. Modern EDRs combine these techniques with: Memory guard pages to detect hooking attempts via STATUS_GUARD_PAGE_VIOLATION exceptions, Syscall monitoring through hooked ntdll.dll functions to detect direct/indirect syscall abuse."
+            },
+            {
+                "Strategy": "Real-Time Hook Detection",
+                "Description": "Deploy Endpoint Detection & Response (EDR) tools to: Identify processes installing global hooks (e.g., WH_KEYBOARD_LL). Terminate malicious processes attempting to intercept input."
+            },
+            {
+                "Strategy": "Restricting Low-Level Hooks",
+                "Description": "Disable unnecessary LowLevelKeyboardProc hooks."
+            }
+        ]
+    }
+]
