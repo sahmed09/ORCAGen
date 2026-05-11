@@ -1,3 +1,0 @@
-[Session Duration (ms)]: 30018.4
-[Total Keys Logged]: 10
-[Average Time per Key (ms)]: 3001.84
